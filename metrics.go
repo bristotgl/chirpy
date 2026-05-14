@@ -13,7 +13,7 @@ func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf(string(data), cfg.fileserverHits.Load())), "text/html")
+	respondWithText(w, http.StatusOK, fmt.Sprintf(string(data), cfg.fileserverHits.Load()), "text/html")
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
