@@ -3,12 +3,17 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 )
 
 func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Hits: %d\n", cfg.fileserverHits.Load())))
+	data, err := os.ReadFile("./metrics.html")
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error loading metrics page", err)
+		return
+	}
+
+	writeResponse(w, http.StatusOK, []byte(fmt.Sprintf(string(data), cfg.fileserverHits.Load())), "text/html")
 }
 
 func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
