@@ -12,7 +12,7 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type response struct {
-		Valid bool `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	params := parameters{}
@@ -35,10 +35,22 @@ func handlerValidateChirp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error marshaling response into JSON", err)
-		return
+	cleanedText := cleanProfaneWords(params.Body)
+
+	respondWithJSON(w, http.StatusOK, response{CleanedBody: cleanedText})
+}
+
+func cleanProfaneWords(text string) string {
+	profaneWords := []string{"sharbert", "kerfuffle", "fornax"}
+
+	textWords := strings.Split(text, " ")
+	for i := range textWords {
+		for _, profane := range profaneWords {
+			if strings.ToLower(textWords[i]) == profane {
+				textWords[i] = "****"
+			}
+		}
 	}
 
-	respondWithJSON(w, http.StatusOK, response{Valid: true})
+	return strings.Join(textWords, " ")
 }

@@ -25,3 +25,7 @@ post "Success" "This is my first chirp!"
 post "Error empty" "   "
 
 post "Error too long" "We need to talk about panettone. How can this bread be so soft and tasty? Honestly, it's a crime it's only sold on Christmas eve! If I had the money I'd hire a bakery to deliver me fresh panettones every week! Wouldn't that be marvelous?? Who else's with me?"
+
+post "Cleaned kerfuffle" "This is a Kerfuffle!"
+
+post "Cleaned all bad words" "This is a FORNAX, a kerfuffle! I can't believe you sharberted this! Kerfuffle FORNAX sharbert"
