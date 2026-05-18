@@ -1,8 +1,17 @@
 package main
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
-	cfg.fileserverHits.Store(0)
-	respondWithText(w, http.StatusOK, "Hits reset to 0", "text/plain")
+	if cfg.platform != "dev" {
+		respondWithError(w, http.StatusForbidden, fmt.Sprintf("This operation can't be executed in environment '%s'", cfg.platform), nil)
+		return
+	}
+
+	if err := cfg.db.DeleteAllUsers(r.Context()); err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Error deleting all users", err)
+	}
 }
