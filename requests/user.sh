@@ -21,3 +21,5 @@ post() {
 }
 
 post "Success" "anakin.skywalker@empire.com"
+post "Success" "luke.skywalker@rebels.com"
+post "Success" "grievous@empire.com"

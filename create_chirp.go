@@ -21,7 +21,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 
 	err := decoder.Decode(&params)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Error decoding request body", err)
+		respondWithError(w, http.StatusBadRequest, "Error decoding request body", err)
 		return
 	}
 
