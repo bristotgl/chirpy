@@ -7,93 +7,59 @@ import (
 	"github.com/google/uuid"
 )
 
-func TestMakeJWT(t *testing.T) {
-	type ExpectedValues struct {
-		JWT string
-		Err error
-	}
-
-	cases := map[string]struct {
-		UserID      uuid.UUID
-		TokenSecret string
-		ExpiresIn   time.Duration
-		Expected    ExpectedValues
-	}{
-		"happy path": {
-			UserID:      uuid.New(),
-			TokenSecret: "secret",
-			ExpiresIn:   time.Minute * 5,
-			Expected: ExpectedValues{
-				JWT: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJjaGlycHktYWNjZXNzIiwic3ViIjoiNTBkYjlhN2ItM2U0Ny00NTU3LWFkZDctMjkyZDJiZWI0NzAyIiwiZXhwIjoxNzc5MjM2MDkwLCJpYXQiOjE3NzkyMzU3OTB9.0H6K4ta3ou7DmRWGa5gw-GS6th0byVPNKx3hQqup_UY",
-				Err: nil,
-			},
-		},
-	}
-
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			actual, err := MakeJWT(c.UserID, c.TokenSecret, c.ExpiresIn)
-			if err != nil {
-				t.Errorf("Error creating tokens with given params. Got error %v but want %v", err, c.Expected.Err)
-				return
-			}
-
-			if len(actual) < 1 {
-				t.Errorf("Invalid token: got %v but want %v", actual, c.Expected.JWT)
-			}
-		})
-	}
-}
-
 func TestValidateJWT(t *testing.T) {
-	type ExpectedValues struct {
-		UserID uuid.UUID
-	}
-
 	validUuid := uuid.New()
 	validSecret := "secret"
-	validToken, _ := MakeJWT(validUuid, validSecret, time.Minute*5)
+	validToken, _ := MakeJWT(validUuid, validSecret, time.Hour)
+	expiredToken, _ := MakeJWT(validUuid, validSecret, time.Hour*-5)
 
-	expiredToken, _ := MakeJWT(validUuid, validSecret, time.Minute*-5)
-
-	cases := map[string]struct {
-		TokenString string
-		TokenSecret string
-		Expected    ExpectedValues
+	cases := []struct {
+		name        string
+		tokenString string
+		tokenSecret string
+		wantUserID  uuid.UUID
+		wantErr     bool
 	}{
-		"happy path": {
-			TokenString: validToken,
-			TokenSecret: validSecret,
-			Expected: ExpectedValues{
-				UserID: validUuid,
-			},
+		{
+			name:        "Happy path",
+			tokenString: validToken,
+			tokenSecret: validSecret,
+			wantUserID:  validUuid,
+			wantErr:     false,
 		},
-		"wrong secret": {
-			TokenString: validToken,
-			TokenSecret: "wrong_secret",
-			Expected: ExpectedValues{
-				UserID: uuid.Nil,
-			},
+		{
+			name:        "Wrong secret",
+			tokenString: validToken,
+			tokenSecret: "wrong_secret",
+			wantUserID:  uuid.Nil,
+			wantErr:     true,
 		},
-		"expired token": {
-			TokenString: expiredToken,
-			TokenSecret: validSecret,
-			Expected: ExpectedValues{
-				UserID: uuid.Nil,
-			},
+		{
+			name:        "Expired token",
+			tokenString: expiredToken,
+			tokenSecret: validSecret,
+			wantUserID:  uuid.Nil,
+			wantErr:     true,
+		},
+		{
+			name:        "Invalid token",
+			tokenString: "invalid_token_string",
+			tokenSecret: validSecret,
+			wantUserID:  uuid.Nil,
+			wantErr:     true,
 		},
 	}
 
-	for name, c := range cases {
-		t.Run(name, func(t *testing.T) {
-			actual, err := ValidateJWT(c.TokenString, c.TokenSecret)
-			if err != nil && c.Expected.UserID != uuid.Nil {
-				t.Errorf("Error validating token: %v", err)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			gotUserID, err := ValidateJWT(c.tokenString, c.tokenSecret)
+			if (err != nil) != c.wantErr {
+				t.Errorf("ValidateJWT() error = %v, wantErr = %v", err, c.wantErr)
 				return
-			} 	
+			}
 
-			if actual != c.Expected.UserID {
-				t.Errorf("UserIDs are different: got %v but want %v", actual, c.Expected.UserID)
+			if gotUserID != c.wantUserID {
+				t.Errorf("ValidateJWT() got %v but want %v", gotUserID, c.wantUserID)
 			}
 		})
 	}
