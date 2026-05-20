@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/bristotgl/chirpy/internal/auth"
 	"github.com/bristotgl/chirpy/internal/database"
 	"github.com/google/uuid"
 )
@@ -20,35 +22,37 @@ type Chirp struct {
 
 func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
-		Body   string    `json:"body"`
-		UserID uuid.UUID `json:"user_id"`
+		Body string `json:"body"`
+	}
+
+	token, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Couldn't find JWT", err)
+		return
+	}
+
+	userId, err := auth.ValidateJWT(token, cfg.tokenSecret)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid JWT", err)
 	}
 
 	params := parameters{}
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
 
-	err := decoder.Decode(&params)
-	if err != nil {
+	if err := decoder.Decode(&params); err != nil {
 		respondWithError(w, http.StatusBadRequest, "Error decoding request body", err)
 		return
 	}
 
-	if len(strings.TrimSpace(params.Body)) == 0 {
-		respondWithError(w, http.StatusBadRequest, "Chirp is empty", nil)
-		return
+	cleanedBody, err := validateChirp(params.Body)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Error validating chirp", err)
 	}
-
-	if len(params.Body) > 140 {
-		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
-		return
-	}
-
-	cleanedBody := cleanProfaneWords(params.Body)
 
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
 		Body:   cleanedBody,
-		UserID: params.UserID,
+		UserID: userId,
 	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error creating chirp", err)
@@ -62,6 +66,18 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 		Body:      chirp.Body,
 		UserID:    chirp.UserID,
 	})
+}
+
+func validateChirp(body string) (string, error) {
+	if len(strings.TrimSpace(body)) == 0 {
+		return "", errors.New("Chirp is empty")
+	}
+
+	if len(body) > 140 {
+		return "", errors.New("Chirp is too long")
+	}
+
+	return cleanProfaneWords(body), nil
 }
 
 func cleanProfaneWords(text string) string {

@@ -1,6 +1,9 @@
 package auth
 
 import (
+	"errors"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -39,4 +42,18 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	}
 
 	return userId, nil
+}
+
+func GetBearerToken(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if len(authHeader) == 0 {
+		return "", errors.New("Authorization header not included in request")
+	}
+
+	authParts := strings.Split(authHeader, " ")
+	if len(authParts) < 2 || authParts[0] != "Bearer" {
+		return "", errors.New("Malformed Authorization header")
+	}
+
+	return authParts[1], nil
 }
