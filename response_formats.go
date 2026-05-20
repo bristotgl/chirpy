@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 )
@@ -35,3 +36,10 @@ func respondWithJSON(w http.ResponseWriter, code int, payload any) {
 	w.WriteHeader(code)
 	w.Write(jsonPayload)
 }
+
+func respondWithText(w http.ResponseWriter, code int, payload string, contentType string) {
+	w.Header().Add("Content-Type", fmt.Sprintf("%s; charset=utf-8", contentType))
+	w.WriteHeader(code)
+	w.Write([]byte(payload))
+}
+
