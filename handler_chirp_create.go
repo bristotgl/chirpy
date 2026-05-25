@@ -34,6 +34,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	userId, err := auth.ValidateJWT(token, cfg.tokenSecret)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Invalid JWT", err)
+		return
 	}
 
 	params := parameters{}
@@ -48,6 +49,7 @@ func (cfg *apiConfig) handlerCreateChirp(w http.ResponseWriter, r *http.Request)
 	cleanedBody, err := validateChirp(params.Body)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, "Error validating chirp", err)
+		return
 	}
 
 	chirp, err := cfg.db.CreateChirp(r.Context(), database.CreateChirpParams{
