@@ -14,3 +14,13 @@ WHERE users.email = $1;
 SELECT users.* FROM users
 JOIN refresh_tokens ON users.id = refresh_tokens.user_id
 WHERE refresh_tokens.token = $1;
+
+-- name: GetUserByID :one
+SELECT * FROM users
+WHERE users.id = $1;
+
+-- name: UpdateUserByID :one
+UPDATE users
+SET email = $2, hashed_password = $3, updated_at = NOW()
+WHERE id = $1
+RETURNING *;
