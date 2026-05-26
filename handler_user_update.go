@@ -35,7 +35,7 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 
 	user, err := cfg.db.GetUserByID(r.Context(), userId)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "User not found", err)
+		respondWithError(w, http.StatusNotFound, "User not found", err)
 		return
 	}
 
