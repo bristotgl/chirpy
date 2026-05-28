@@ -8,9 +8,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/alexedwards/argon2id"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 )
+
+func HashPassword(password string) (string, error) {
+	return argon2id.CreateHash(password, argon2id.DefaultParams)
+}
+
+func CheckPasswordHash(password, hash string) (bool, error) {
+	return argon2id.ComparePasswordAndHash(password, hash)
+}
 
 func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
@@ -60,6 +69,20 @@ func GetBearerToken(headers http.Header) (string, error) {
 
 	authParts := strings.Split(authHeader, " ")
 	if len(authParts) < 2 || authParts[0] != "Bearer" {
+		return "", errors.New("Malformed Authorization header")
+	}
+
+	return authParts[1], nil
+}
+
+func GetAPIKey(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if len(authHeader) == 0 {
+		return "", errors.New("Authorization header not included in request")
+	}
+
+	authParts := strings.Split(authHeader, " ")
+	if len(authParts) < 2 || authParts[0] != "ApiKey" {
 		return "", errors.New("Malformed Authorization header")
 	}
 

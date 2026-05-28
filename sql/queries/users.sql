@@ -1,7 +1,7 @@
 -- name: CreateUser :one
 INSERT INTO users (id, created_at, updated_at, email, hashed_password)
 VALUES (gen_random_uuid(), NOW(), NOW(), $1, $2)
-RETURNING id, created_at, updated_at, email;
+RETURNING id, created_at, updated_at, email, is_chirpy_red;
 
 -- name: DeleteAllUsers :exec
 TRUNCATE TABLE users CASCADE;
@@ -24,3 +24,8 @@ UPDATE users
 SET email = $2, hashed_password = $3, updated_at = NOW()
 WHERE id = $1
 RETURNING *;
+
+-- name: UpgradeUserByID :exec
+UPDATE users
+SET is_chirpy_red = 'true'
+WHERE users.id = $1;
